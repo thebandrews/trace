@@ -6,13 +6,13 @@ using namespace std;
 
 Trimesh::~Trimesh()
 {
-	for( Materials::iterator i = materials.begin(); i != materials.end(); ++i )
-		delete *i;
+    for( Materials::iterator i = materials.begin(); i != materials.end(); ++i )
+        delete *i;
 }
 
 bool Trimesh::hasPerVertexNormals()
 {
-	return !(this->normals.empty());
+    return !(this->normals.empty());
 }
 
 // must add vertices, normals, and materials IN ORDER
@@ -52,9 +52,9 @@ bool Trimesh::addFace( int a, int b, int c )
 }
 
 char *
-Trimesh::doubleCheck()
-// Check to make sure that if we have per-vertex materials or normals
-// they are the right number.
+    Trimesh::doubleCheck()
+    // Check to make sure that if we have per-vertex materials or normals
+    // they are the right number.
 {
     if( !materials.empty() && materials.size() != vertices.size() )
         return "Bad Trimesh: Wrong number of materials.";
@@ -74,40 +74,115 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
     // Note that you are only intersecting a single triangle, and the vertices
     // of the triangle are supplied to you by the trimesh class.
     //
-    // You should retrieve the vertices using code like this:
+    // TrimeshFace::parent->hasPerVertexNormals tells you if the triangle has per-vertex normals.
+    // If it does, you should compute and return the interpolated normal at the intersection point.
+    // If it does not, you should return the normal of the triangle's supporting plane.
+    // 
+
+    const int x = 0, y = 1, z = 2;
+    Vec3d normal;
+
+    const Vec3d P0 = r.getPosition();
+    const Vec3d Rd = r.getDirection();
+
     //
-    // const Vec3d& a = parent->vertices[ids[0]];
-    // const Vec3d& b = parent->vertices[ids[1]];
-    // const Vec3d& c = parent->vertices[ids[2]];
-	//
-	// TrimeshFace::parent->hasPerVertexNormals tells you if the triangle has per-vertex normals.
-	// If it does, you should compute and return the interpolated normal at the intersection point.
-	// If it does not, you should return the normal of the triangle's supporting plane.
-	// 
+    // Retrieve vertices of the triangle
+    //
+    const Vec3d& a = parent->vertices[ids[0]];
+    const Vec3d& b = parent->vertices[ids[1]];
+    const Vec3d& c = parent->vertices[ids[2]];
+
+    //
+    // Compute normal for plane containing triangle
+    //
+    const Vec3d ba_vec = b-a;
+    const Vec3d ca_vec = c-a;
+
+    normal = ba_vec^ca_vec;
+    normal.normalize();
+
+    //
+    // If n*d = 0 plane is parallel and ray does not intersect the plane
+    //
+    float nDotD = normal*Rd;
+    if(nDotD == 0)
+    {
+        return false;
+    }
+
+    //
+    // Compute coefficient d
+    //
+    float d = normal*a;
+
+    //
+    // Compute t
+    //
+    double t = (d-(normal*P0))/nDotD;
+
+    if(t > RAY_EPSILON)
+    {
+        //
+        // Find intersection Q
+        //
+        const Vec3d Q = P0 + t*Rd;
+
+        //
+        // Compute if Q is inside triangle
+        //
+        const Vec3d qa_vec = Q-a;
+        const Vec3d cb_vec = c-b;
+        const Vec3d qb_vec = Q-b;
+        const Vec3d ac_vec = a-c;
+        const Vec3d qc_vec = Q-c;
+
+        //
+        // If cross product of Q-a and b-a >= 0,
+        // then Q is inside triangle.
+        //
+        if( (((ba_vec ^ qa_vec) * normal) >= 0) &&
+            (((cb_vec ^ qb_vec) * normal) >= 0) &&
+            (((ac_vec ^ qc_vec) * normal) >= 0))
+        {
+
+            if(parent->hasPerVertexNormals())
+            {
+                // TODO compute barycentric for normal interpolation
+                i.setN(normal);
+            }
+            else
+            {
+                i.setN(normal);
+            }
+
+            i.obj = this;
+            i.setT(t);
+            return true;
+        }
+    }
 
     return false;
 }
 
 
-void
-Trimesh::generateNormals()
 // Once you've loaded all the verts and faces, we can generate per
 // vertex normals by averaging the normals of the neighboring faces.
+void Trimesh::generateNormals()
 {
     int cnt = vertices.size();
     normals.resize( cnt );
     int *numFaces = new int[ cnt ]; // the number of faces assoc. with each vertex
     memset( numFaces, 0, sizeof(int)*cnt );
-    
+
     for( Faces::iterator fi = faces.begin(); fi != faces.end(); ++fi )
     {
         Vec3d a = vertices[(**fi)[0]];
         Vec3d b = vertices[(**fi)[1]];
         Vec3d c = vertices[(**fi)[2]];
-        
+
         Vec3d faceNormal = ((b-a) ^ (c-a));
-		faceNormal.normalize();
-        
+        faceNormal.normalize();
+
         for( int i = 0; i < 3; ++i )
         {
             normals[(**fi)[i]] += faceNormal;
@@ -118,10 +193,10 @@ Trimesh::generateNormals()
     for( int i = 0; i < cnt; ++i )
     {
         if( numFaces[i] )
-		{
+        {
             normals[i]  /= numFaces[i];
-			normals[i].normalize();
-		}
+            normals[i].normalize();
+        }
     }
 
     delete [] numFaces;

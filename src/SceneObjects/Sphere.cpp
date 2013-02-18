@@ -15,15 +15,15 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 
     Vec3d normal;
 
-    Vec3d P0 = r.getPosition();
-    Vec3d Rd = r.getDirection();
+    const Vec3d P0 = r.getPosition();
+    const Vec3d Rd = r.getDirection();
 
     //
     // Compute the a, b, c terms of the sphere equation
     //
-    double a = Rd[x]*Rd[x] + Rd[y]*Rd[y] + Rd[z]*Rd[z];
-    double b = 2*(P0[x]*Rd[x] + P0[y]*Rd[y] + P0[z]*Rd[z]);
-    double c = P0[x]*P0[x] + P0[y]*P0[y] + P0[z]*P0[z] - 1;
+    const double a = Rd[x]*Rd[x] + Rd[y]*Rd[y] + Rd[z]*Rd[z];
+    const double b = 2*(P0[x]*Rd[x] + P0[y]*Rd[y] + P0[z]*Rd[z]);
+    const double c = P0[x]*P0[x] + P0[y]*P0[y] + P0[z]*P0[z] - 1;
 
     //
     // Compute discriminant
