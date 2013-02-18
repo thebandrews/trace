@@ -31,7 +31,7 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
     double discriminant = b * b - 4 * a * c;
 
     double BIG_NUMBER = 1e100;
-    double farRoot, nearRoot;
+    double t1, t2;
 
     //
     // If discriminant < 0 we have imaginary numbers for
@@ -45,24 +45,34 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
     //
     // Compute sphere intersection points
     //
-    nearRoot = (-b - sqrt(discriminant)) / ( 2 * a );
-    //farRoot = (-b - sqrt(discriminant)) / ( 2 * a );
+    t2 = (-b + sqrt(discriminant)) / ( 2 * a );
+    t1 = (-b - sqrt(discriminant)) / ( 2 * a );
 
-    if(nearRoot <= RAY_EPSILON)
+    if(t2 <= RAY_EPSILON)
     {
         return false;
     }
 
     //
-    // Compute the normal which is just r at the nearRoot x,y,z coordinates
+    // Two intersections
     //
-    normal = Vec3d(r.at(nearRoot)[x], r.at(nearRoot)[y], r.at(nearRoot)[z]);
-    normal.normalize();
+    if(t1 > RAY_EPSILON)
+    {
+        //
+        // Compute the normal which is just r at the nearRoot x,y,z coordinates
+        //
+        normal = Vec3d(r.at(t1));
+        normal.normalize();
 
-    i.setT(nearRoot);
-    i.setN(normal);
-    i.obj = this;
+        i.setT(t1);
+        i.setN(normal);
+        i.obj = this;
 
-    return true;
+        return true;
+    }
+
+    // TODO: Do we need to compute t2? Possibly for reflection/shadows
+    return false;
+
 }
 
