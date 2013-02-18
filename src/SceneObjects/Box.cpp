@@ -29,7 +29,7 @@ bool Box::intersectLocal( const ray& r, isect& i ) const
                         continue;
                 }
                 
-                t = ((it/3) - 0.5 - p[mod0]) / d[mod0];                 
+                t = ((it/3) - 0.5 - p[mod0]) / d[mod0];
 
                 if(t < RAY_EPSILON || t > bestT){
                         continue;

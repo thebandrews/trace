@@ -11,6 +11,58 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
     // Add sphere intersection code here.
     // it currently ignores all spheres and just return false.
 
-    return false;
+    const int x = 0, y = 1, z = 2;  // For the dumb array indexes for the vectors
+
+    Vec3d normal;
+
+    Vec3d P0 = r.getPosition();
+    Vec3d Rd = r.getDirection();
+
+    //
+    // Compute the a, b, c terms of the sphere equation
+    //
+    double a = Rd[x]*Rd[x] + Rd[y]*Rd[y] + Rd[z]*Rd[z];
+    double b = 2*(P0[x]*Rd[x] + P0[y]*Rd[y] + P0[z]*Rd[z]);
+    double c = P0[x]*P0[x] + P0[y]*P0[y] + P0[z]*P0[z] - 1;
+
+    //
+    // Compute discriminant
+    //
+    double discriminant = b * b - 4 * a * c;
+
+    double BIG_NUMBER = 1e100;
+    double farRoot, nearRoot;
+
+    //
+    // If discriminant < 0 we have imaginary numbers for
+    // our solution and no intersection - return false.
+    //
+    if(discriminant < 0)
+    {
+        return false;
+    }
+
+    //
+    // Compute sphere intersection points
+    //
+    nearRoot = (-b - sqrt(discriminant)) / ( 2 * a );
+    //farRoot = (-b - sqrt(discriminant)) / ( 2 * a );
+
+    if(nearRoot <= RAY_EPSILON)
+    {
+        return false;
+    }
+
+    //
+    // Compute the normal which is just r at the nearRoot x,y,z coordinates
+    //
+    normal = Vec3d(r.at(nearRoot)[x], r.at(nearRoot)[y], r.at(nearRoot)[z]);
+    normal.normalize();
+
+    i.setT(nearRoot);
+    i.setN(normal);
+    i.obj = this;
+
+    return true;
 }
 
