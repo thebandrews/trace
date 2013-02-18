@@ -147,11 +147,36 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
 
             if(parent->hasPerVertexNormals())
             {
-                // TODO compute barycentric for normal interpolation
-                i.setN(normal);
+                //
+                // Compute barycentric coordinates for normal interpolation
+                //
+                float alpha = ((cb_vec ^ qb_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+                float beta  = ((ac_vec ^ qc_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+                float gamma  = ((ba_vec ^ qa_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+
+                //
+                // Get parent vertex normals
+                //
+                const Vec3d& Na = parent->normals[ids[0]];
+                const Vec3d& Nb = parent->normals[ids[1]];
+                const Vec3d& Nc = parent->normals[ids[2]];
+
+                //
+                // Compute weighted normal
+                //
+                Vec3d Nq = (alpha * Na) + (beta * Nb) + (gamma * Nc);
+                Nq.normalize();
+
+                //
+                // Set the normal to Nq
+                //
+                i.setN(Nq);
             }
             else
             {
+                //
+                // Set the normal to the plane
+                //
                 i.setN(normal);
             }
 
