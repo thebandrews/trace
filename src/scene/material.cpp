@@ -12,35 +12,71 @@ extern bool debugMode;
 //  returning the color of that point.
 Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
 {
-	// YOUR CODE HERE
+    // YOUR CODE HERE
 
-	// For now, this method just returns the diffuse color of the object.
-	// This gives a single matte color for every distinct surface in the
-	// scene, and that's it.  Simple, but enough to get you started.
-	// (It's also inconsistent with the Phong model...)
+    // For now, this method just returns the diffuse color of the object.
+    // This gives a single matte color for every distinct surface in the
+    // scene, and that's it.  Simple, but enough to get you started.
+    // (It's also inconsistent with the Phong model...)
 
-	// Your mission is to fill in this method with the rest of the phong
-	// shading model, including the contributions of all the light sources.
+    // Your mission is to fill in this method with the rest of the phong
+    // shading model, including the contributions of all the light sources.
     // You will need to call both distanceAttenuation() and shadowAttenuation()
     // somewhere in your code in order to compute shadows and light falloff.
-	if( debugMode )
-		std::cout << "Debugging the Phong code (or lack thereof...)" << std::endl;
+    if( debugMode )
+        std::cout << "Debugging the Phong code (or lack thereof...)" << std::endl;
 
-	// When you're iterating through the lights,
-	// you'll want to use code that looks something
-	// like this:
-	//
-	// for ( vector<Light*>::const_iterator litr = scene->beginLights(); 
-	// 		litr != scene->endLights(); 
-	// 		++litr )
-	// {
-	// 		Light* pLight = *litr;
-	// 		.
-	// 		.
-	// 		.
-	// }
+    const Vec3d P0 = r.getPosition();
+    const Vec3d Rd = r.getDirection();
+    double t = i.t;
+    const Vec3d N = i.N;
+    const Vec3d Q = P0 + t*Rd;
 
-	return kd(i);
+    Vec3d KaIla;
+
+    //
+    // Multiply rgb triples
+    //
+    KaIla[0] = ka(i)[0] * (scene->ambient())[0];
+    KaIla[1] = ka(i)[1] * (scene->ambient())[1];
+    KaIla[2] = ka(i)[2] * (scene->ambient())[2];
+
+
+    Vec3d color = ke(i) + KaIla;
+
+
+    // When you're iterating through the lights,
+    // you'll want to use code that looks something
+    // like this:
+    //
+    for(vector<Light*>::const_iterator litr = scene->beginLights(); litr != scene->endLights(); ++litr)
+    {
+        Light* pLight = *litr;
+        double atten = pLight->distanceAttenuation(Q);
+        Vec3d L = pLight->getDirection(Q);
+        Vec3d Half = (Rd+L);
+        Half.normalize();
+
+        //
+        // Compute Diffuse term
+        //
+        double diffuseShade = max((N * L), 0.0);
+        Vec3d diffuse = diffuseShade * kd(i);
+
+        //
+        // Compute specular term
+        //
+        double specularShade = pow(max((Half * N), 0.0), shininess(i));
+        Vec3d specular = specularShade * ks(i);
+
+        //
+        // Final color calculation
+        //
+        color += atten*(diffuse + specular);
+
+    }
+
+    return color;
 }
 
 
@@ -60,7 +96,7 @@ TextureMap::TextureMap( string filename )
 
 Vec3d TextureMap::getMappedValue( const Vec2d& coord ) const
 {
-	// YOUR CODE HERE
+    // YOUR CODE HERE
 
     // In order to add texture mapping support to the 
     // raytracer, you need to implement this function.
@@ -80,18 +116,18 @@ Vec3d TextureMap::getPixelAt( int x, int y ) const
     // This keeps it from crashing if it can't load
     // the texture, but the person tries to render anyway.
     if (0 == data)
-      return Vec3d(1.0, 1.0, 1.0);
+        return Vec3d(1.0, 1.0, 1.0);
 
     if( x >= width )
-       x = width - 1;
+        x = width - 1;
     if( y >= height )
-       y = height - 1;
+        y = height - 1;
 
     // Find the position in the big data array...
     int pos = (y * width + x) * 3;
     return Vec3d( double(data[pos]) / 255.0, 
-       double(data[pos+1]) / 255.0,
-       double(data[pos+2]) / 255.0 );
+        double(data[pos+1]) / 255.0,
+        double(data[pos+2]) / 255.0 );
 }
 
 Vec3d MaterialParameter::value( const isect& is ) const
