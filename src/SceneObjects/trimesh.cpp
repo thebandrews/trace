@@ -104,7 +104,7 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
     //
     // If n*d = 0 plane is parallel and ray does not intersect the plane
     //
-    float nDotD = normal*Rd;
+    double nDotD = normal*Rd;
     if(nDotD == 0)
     {
         return false;
@@ -113,7 +113,7 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
     //
     // Compute coefficient d
     //
-    float d = normal*a;
+    double d = normal*a;
 
     //
     // Compute t
@@ -150,9 +150,9 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
                 //
                 // Compute barycentric coordinates for normal interpolation
                 //
-                float alpha = ((cb_vec ^ qb_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
-                float beta  = ((ac_vec ^ qc_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
-                float gamma  = ((ba_vec ^ qa_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+                double alpha = ((cb_vec ^ qb_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+                double beta  = ((ac_vec ^ qc_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
+                double gamma  = ((ba_vec ^ qa_vec)*normal) / ((ba_vec ^ ca_vec)*normal);
 
                 //
                 // Get parent vertex normals
