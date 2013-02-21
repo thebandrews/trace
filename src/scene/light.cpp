@@ -19,7 +19,31 @@ Vec3d DirectionalLight::shadowAttenuation( const Vec3d& P ) const
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
     // HINT: You can access the Scene using the getScene function inherited by Light object.
-    return Vec3d(1,1,1);
+
+    //
+    // Compute shadow ray
+    //
+    Vec3d d = getDirection(P);
+    ray r( P, d, ray::SHADOW );
+
+    isect i;
+    getScene()->intersect(r,i);
+
+    double tLight = 1.0e308; // For directional light tLight = infinity.
+    double t = i.t;
+
+    Vec3d atten;
+
+    if(t < tLight)
+    {
+        atten = Vec3d(0,0,0); //i.getMaterial().kt(i);
+    }
+    else
+    {
+        atten = Vec3d(1,1,1);
+    }
+
+    return atten;
 }
 
 Vec3d DirectionalLight::getColor() const
@@ -70,5 +94,29 @@ Vec3d PointLight::shadowAttenuation(const Vec3d& P) const
     // YOUR CODE HERE:
     // You should implement shadow-handling code here.
     // HINT: You can access the Scene using the getScene function inherited by Light object.
-    return Vec3d(1,1,1);
+
+    //
+    // Compute shadow ray
+    //
+    Vec3d d = getDirection(P);
+    ray r( P, d, ray::SHADOW );
+
+    isect i;
+    getScene()->intersect(r,i);
+
+    double tLight = (position - P).length();
+    double t = i.t;
+
+    Vec3d atten;
+
+    if(t < tLight)
+    {
+        atten = Vec3d(0,0,0);//i.getMaterial().kt(i);
+    }
+    else
+    {
+        atten = Vec3d(1,1,1);
+    }
+
+    return atten;
 }

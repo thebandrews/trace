@@ -52,7 +52,8 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
     for(vector<Light*>::const_iterator litr = scene->beginLights(); litr != scene->endLights(); ++litr)
     {
         Light* pLight = *litr;
-        double atten = pLight->distanceAttenuation(Q);
+        Vec3d atten = pLight->distanceAttenuation(Q)*pLight->shadowAttenuation(Q);
+        
         Vec3d L = pLight->getDirection(Q);
         Vec3d Half = (Rd+L);
         Half.normalize();
@@ -72,7 +73,10 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
         //
         // Final color calculation
         //
-        color += atten*(diffuse + specular);
+        Vec3d ds = diffuse + specular;
+        color[0] += (atten[0] * ds[0]);
+        color[1] += (atten[1] * ds[1]);
+        color[2] += (atten[2] * ds[2]);
 
     }
 
