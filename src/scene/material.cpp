@@ -28,6 +28,10 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
 
     const Vec3d P0 = r.getPosition();
     const Vec3d Rd = r.getDirection();
+    
+    Vec3d Viewer = -r.getDirection();
+    Viewer.normalize();
+
     double t = i.t;
     const Vec3d N = i.N;
     const Vec3d Q = P0 + t*Rd;
@@ -37,9 +41,10 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
     //
     // Multiply rgb triples
     //
-    KaIla[0] = ka(i)[0] * (scene->ambient())[0];
+    KaIla = prod(ka(i), scene->ambient());
+    /*KaIla[0] = ka(i)[0] * (scene->ambient())[0];
     KaIla[1] = ka(i)[1] * (scene->ambient())[1];
-    KaIla[2] = ka(i)[2] * (scene->ambient())[2];
+    KaIla[2] = ka(i)[2] * (scene->ambient())[2];*/
 
 
     Vec3d color = ke(i) + KaIla;
@@ -52,20 +57,20 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
     for(vector<Light*>::const_iterator litr = scene->beginLights(); litr != scene->endLights(); ++litr)
     {
         Light* pLight = *litr;
-        Vec3d atten = pLight->distanceAttenuation(Q)*pLight->shadowAttenuation(Q);
-        
+        Vec3d atten = pLight->distanceAttenuation(Q) * (pLight->shadowAttenuation(Q));
+
         Vec3d L = pLight->getDirection(Q);
-        Vec3d Half = (Rd+L);
+        Vec3d Half = (Viewer+L);
         Half.normalize();
 
         //
-        // Compute Diffuse term
+        // Compute Diffuse term - Good
         //
         double diffuseShade = max((N * L), 0.0);
         Vec3d diffuse = diffuseShade * kd(i);
 
         //
-        // Compute specular term
+        // Compute specular term - Good
         //
         double specularShade = pow(max((Half * N), 0.0), shininess(i));
         Vec3d specular = specularShade * ks(i);
@@ -74,10 +79,7 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
         // Final color calculation
         //
         Vec3d ds = diffuse + specular;
-        color[0] += (atten[0] * ds[0]);
-        color[1] += (atten[1] * ds[1]);
-        color[2] += (atten[2] * ds[2]);
-
+        color += prod(atten, ds);
     }
 
     return color;

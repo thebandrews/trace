@@ -24,26 +24,61 @@ Vec3d DirectionalLight::shadowAttenuation( const Vec3d& P ) const
     // Compute shadow ray
     //
     Vec3d d = getDirection(P);
+    double tLight = 1.0e308; // For directional light tLight = infinity.
     ray r( P, d, ray::SHADOW );
 
     isect i;
-    getScene()->intersect(r,i);
+    Scene* scene = getScene();
 
-    double tLight = 1.0e308; // For directional light tLight = infinity.
-    double t = i.t;
+    Vec3d P0;
+    Vec3d Rd;
+    Vec3d Q;
+    double t;
+    Vec3d k_t;
+    Material m;
 
-    Vec3d atten;
+    int max = 10;
+    int count = 0;
 
-    if(t < tLight)
+    if(scene->intersect(r,i))
     {
-        atten = Vec3d(0,0,0); //i.getMaterial().kt(i);
-    }
-    else
-    {
-        atten = Vec3d(1,1,1);
+        m = i.getMaterial();
+        k_t = m.kt(i);
+        t = i.t;
+
+        if(t < tLight)
+        {
+            //
+            // Trace the shadow ray back to the light source
+            //
+            while(scene->intersect(r,i) && count++ < max)
+            {
+                P0 = r.getPosition();
+                Rd = r.getDirection();
+                t = i.t;
+                Q = P0 + t*Rd;
+
+                r = ray( Q, Rd, ray::SHADOW );
+
+                if(scene->intersect(r,i))
+                {
+                    m = i.getMaterial();
+                    k_t = prod(k_t, m.kt(i));
+                }
+            }
+
+            //
+            // Return the product of k_t.
+            //
+            return k_t;
+        }
+
     }
 
-    return atten;
+    //
+    // No shadow attenuation, return 1.
+    //
+    return Vec3d(1,1,1);
 }
 
 Vec3d DirectionalLight::getColor() const
@@ -99,24 +134,61 @@ Vec3d PointLight::shadowAttenuation(const Vec3d& P) const
     // Compute shadow ray
     //
     Vec3d d = getDirection(P);
+    double tLight = (position - P).length();
     ray r( P, d, ray::SHADOW );
 
     isect i;
-    getScene()->intersect(r,i);
+    Scene* scene = getScene();
 
-    double tLight = (position - P).length();
-    double t = i.t;
+    Vec3d P0;
+    Vec3d Rd;
+    Vec3d Q;
+    double t;
+    Vec3d k_t;
+    Material m;
 
-    Vec3d atten;
+    int max = 10;
+    int count = 0;
 
-    if(t < tLight)
+    if(scene->intersect(r,i))
     {
-        atten = Vec3d(0,0,0);//i.getMaterial().kt(i);
-    }
-    else
-    {
-        atten = Vec3d(1,1,1);
+        m = i.getMaterial();
+        k_t = m.kt(i);
+        t = i.t;
+
+        if(t < tLight)
+        {
+
+            //
+            // Trace the shadow ray back to the light source
+            //
+            while(scene->intersect(r,i) && count++ < max)
+            {
+                P0 = r.getPosition();
+                Rd = r.getDirection();
+                t = i.t;
+                Q = P0 + t*Rd;
+
+                r = ray( Q, Rd, ray::SHADOW );
+
+                if(scene->intersect(r,i))
+                {
+                    m = i.getMaterial();
+                    k_t = prod(k_t, m.kt(i));
+                }
+            }
+
+            //
+            // Return the product of k_t.
+            //
+            return k_t;
+        }
+
     }
 
-    return atten;
+    //
+    // No shadow attenuation, return 1.
+    //
+    return Vec3d(1,1,1);
+
 }

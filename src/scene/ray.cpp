@@ -5,5 +5,14 @@
 const Material &
 isect::getMaterial() const
 {
-    return material ? *material : obj->getMaterial();
+    if(material){
+        return *material;
+    }
+    else if(obj)
+    {
+        return obj->getMaterial();
+    }
+    else{
+        return Material();
+    }
 }
