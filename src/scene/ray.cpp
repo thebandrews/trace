@@ -8,11 +8,14 @@ isect::getMaterial() const
     if(material){
         return *material;
     }
-    else if(obj)
+    
+    if(obj ==  NULL)
     {
-        return obj->getMaterial();
+        // This should never happen, but to avoid
+        // insidious and difficult to debug memory
+        // bugs throw here.
+        throw;
     }
-    else{
-        return Material();
-    }
+
+    return obj->getMaterial();
 }

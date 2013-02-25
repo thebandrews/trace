@@ -54,7 +54,7 @@ Vec3d RayTracer::traceRay( const ray& r,
     if( scene->intersect( r, i ) ) {
         // YOUR CODE HERE
 
-        // An intersection occured!  We've got work to do.  For now,
+        // An intersection occurred!  We've got work to do.  For now,
         // this code gets the material for the surface that was intersected,
         // and asks that material to provide a color for the ray.  
 
@@ -63,8 +63,40 @@ Vec3d RayTracer::traceRay( const ray& r,
         // more steps: add in the contributions from reflected and refracted
         // rays.
 
+
+
         const Material& m = i.getMaterial();
-        return m.shade(scene, r, i);
+        Vec3d color = m.shade(scene, r, i);
+
+        if(depth < m_depth){
+
+            //
+            // Compute reflected ray
+            //
+            if(m.kr(i) != Vec3d(0,0,0))
+            {
+                const Vec3d P0 = r.getPosition();
+                const Vec3d Rd = r.getDirection();
+                const Vec3d N = i.N;
+                double t = i.t;
+                Vec3d Q = P0 + t*Rd;
+
+                //
+                // Reflection direction according to Shirley:
+                // r = d-2(d · n)n
+                //
+                Vec3d R = Rd - (2*(Rd*N)*N);
+                ray reflect( Q, R, ray::REFLECTION );
+
+                return (color + prod(m.kr(i),traceRay(reflect, thresh, depth+1)));
+            }
+            return color;
+        }
+        else
+        {
+            return color;
+        }
+
 
     } else {
         // No intersection.  This ray travels to infinity, so we color
@@ -153,7 +185,7 @@ bool RayTracer::loadScene( const char* fn )
     return true;
 }
 
-void RayTracer::traceSetup( int w, int h )
+void RayTracer::traceSetup( int w, int h, int depth )
 {
     if( buffer_width != w || buffer_height != h )
     {
@@ -165,6 +197,7 @@ void RayTracer::traceSetup( int w, int h )
         buffer = new unsigned char[ bufferSize ];
 
     }
+    m_depth = depth;
     memset( buffer, 0, w*h*3 );
     m_bBufferReady = true;
 }

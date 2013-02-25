@@ -43,7 +43,7 @@ int TraceGLWindow::handle(int event)
 			std::cout << "Tracing ray at " << x << ", " << y << std::endl;
 			// Have we re-sized since drawing?
 			if(!raytracer->isReady()) 
-				raytracer->traceSetup(m_nWindowWidth, m_nWindowHeight);
+                raytracer->traceSetup(m_nWindowWidth, m_nWindowHeight, ((GraphicalUI*) traceUI)->getDepth());
 
 			debugMode = true;
 			raytracer->tracePixel( x, y );
