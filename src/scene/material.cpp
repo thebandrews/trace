@@ -60,6 +60,7 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
         Vec3d atten = pLight->distanceAttenuation(Q) * (pLight->shadowAttenuation(Q));
 
         Vec3d L = pLight->getDirection(Q);
+        Vec3d Il = pLight->getColor();
         Vec3d Half = (Viewer+L);
         Half.normalize();
 
@@ -79,7 +80,7 @@ Vec3d Material::shade( Scene *scene, const ray& r, const isect& i ) const
         // Final color calculation
         //
         Vec3d ds = diffuse + specular;
-        color += prod(atten, ds);
+        color += prod(Il, (prod(atten, ds)));
     }
 
     return color;
