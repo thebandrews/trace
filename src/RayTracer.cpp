@@ -63,16 +63,26 @@ Vec3d RayTracer::traceRay( const ray& r,
         // more steps: add in the contributions from reflected and refracted
         // rays.
 
-
+        
 
         const Material& m = i.getMaterial();
-        Vec3d color = m.shade(scene, r, i);
+        
 
         const Vec3d P0 = r.getPosition();
         const Vec3d Rd = r.getDirection();
-        const Vec3d N = i.N;
+        Vec3d N = i.N;
         double t = i.t;
         Vec3d Q = P0 + t*Rd;
+        Vec3d color = Vec3d(0,0,0);
+
+        if(N*(-Rd) <= 0)
+        {
+            N = -N;
+            i.setN(N);
+            color = prod(m.kt(i), scene->ambient());
+        }
+
+        color += m.shade(scene, r, i);
 
         if(depth < m_depth){
 
@@ -81,11 +91,6 @@ Vec3d RayTracer::traceRay( const ray& r,
             //
             if(m.kr(i) != Vec3d(0,0,0))
             {
-                /*const Vec3d P0 = r.getPosition();
-                const Vec3d Rd = r.getDirection();
-                const Vec3d N = i.N;
-                double t = i.t;
-                Vec3d Q = P0 + t*Rd;*/
 
                 //
                 // Reflection direction according to Shirley:
@@ -116,21 +121,48 @@ Vec3d RayTracer::traceRay( const ray& r,
                     n_t = 1.0003; ///index_of_air;
                 }
 
-                //
-                // Compute total internal reflection
-                //
-                double tir = 1-(((n_i*n_i)*(1-((Rd*N)*(Rd*N))))/(n_t*n_t));
+                double tir_term = 1 - (((n_i*n_i)*(1 - ((Rd*N)*(Rd*N))))/(n_t*n_t));
 
-                if (tir >= 0)
+                if(tir_term >= 0)
                 {
-                    //
-                    // Compute T - Taken from Shirley
-                    //
-                    Vec3d T = ((n_i*(Rd - N*(Rd*N))) / (n_t)) - N*tir;
+
+                    Vec3d T = ((n_i*(Rd-(N*(Rd*N))))/(n_t)) - (N*(sqrt(tir_term)));
                     ray refract (Q, T, ray::REFRACTION );
-                
-                    color += (prod(m.kt(i), traceRay(refract, thresh, depth+1))); 
+                    color = color + (prod(m.kt(i), traceRay(refract, thresh, depth+1)));
                 }
+
+                /*double n = n_i / n_t;
+                double n_squared = n * n;
+
+                double cos_i = N*Rd;
+                double tir_term = 1 - (n_squared*(1-(cos_i*cos_i)));
+                double cos_t = sqrt(tir_term);
+
+                if(tir_term >= 0)
+                {
+                    Vec3d T = (n*cos_i - cos_t)*N - n*N;
+                    ray refract (Q, T, ray::REFRACTION );
+                    color += (prod(m.kt(i), traceRay(refract, thresh, depth+1)));
+                }*/
+
+                ////
+                //// Compute total internal reflection
+                ////
+                //double tir = 1-(((n_i*n_i)*(1-((Rd*N)*(Rd*N))))/(n_t*n_t));
+
+                //if (tir >= 0)
+                //{
+                //    //
+                //    // Compute T - Taken from Shirley
+                //    //
+                //    Vec3d T = ((n_i*(Rd - N*(Rd*N))) / (n_t)) - N*sqrt(tir);
+                //    ray refract (Q, T, ray::REFRACTION );
+                //
+                //    color += (prod(m.kt(i), traceRay(refract, thresh, depth+1))); 
+                //}
+
+
+
             }
 
             return color;
