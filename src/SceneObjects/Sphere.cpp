@@ -66,12 +66,28 @@ bool Sphere::intersectLocal( const ray& r, isect& i ) const
 
         i.setT(t1);
         i.setN(normal);
+        i.N.normalize();
         i.obj = this;
 
         return true;
     }
 
-    // TODO: Do we need to compute t2? Possibly for reflection/shadows
+    if(t2 > RAY_EPSILON)
+    {
+        //
+        // Compute the normal which is just r at the nearRoot x,y,z coordinates
+        //
+        normal = Vec3d(r.at(t2));
+        normal.normalize();
+
+        i.setT(t2);
+        i.setN(normal);
+        i.N.normalize();
+        i.obj = this;
+
+        return true;
+    }
+
     return false;
 
 }

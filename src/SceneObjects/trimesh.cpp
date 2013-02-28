@@ -97,8 +97,13 @@ bool TrimeshFace::intersectLocal( const ray& r, isect& i ) const
     //
     const Vec3d ba_vec = b-a;
     const Vec3d ca_vec = c-a;
-
     normal = ba_vec^ca_vec;
+
+    if(normal.length() == 0)
+    {
+        return false;
+    }
+
     normal.normalize();
 
     //

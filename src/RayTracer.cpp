@@ -52,21 +52,11 @@ Vec3d RayTracer::traceRay( const ray& r,
     isect i;
 
     if( scene->intersect( r, i ) ) {
-        // YOUR CODE HERE
-
         // An intersection occurred!  We've got work to do.  For now,
         // this code gets the material for the surface that was intersected,
         // and asks that material to provide a color for the ray.  
 
-        // This is a great place to insert code for recursive ray tracing.
-        // Instead of just returning the result of shade(), add some
-        // more steps: add in the contributions from reflected and refracted
-        // rays.
-
-        
-
         const Material& m = i.getMaterial();
-        
 
         const Vec3d P0 = r.getPosition();
         const Vec3d Rd = r.getDirection();
@@ -80,6 +70,7 @@ Vec3d RayTracer::traceRay( const ray& r,
         if(N*(-Rd) <= 0)
         {
             color = prod(m.kt(i), scene->ambient());
+            i.setN(-N);
         }
 
         color += m.shade(scene, r, i);
@@ -128,12 +119,18 @@ Vec3d RayTracer::traceRay( const ray& r,
                     Rfn = -N;
                 }
 
+                //
+                // Check for total internal reflection
+                //
                 double tir_term = 1 - ((n_i/n_t)*(n_i/n_t)*(1-((Rfn*Viewer)*(Rfn*Viewer))));
                 if(tir_term >= 0)
                 {
+                    //
+                    // Compute Refraction vector
+                    //
                     Vec3d T = ((n_i/n_t)*(Rfn*Viewer) - sqrt(tir_term))*Rfn-((n_i/n_t)*Viewer);
                     ray refract (Q, T, ray::REFRACTION );
-                    
+
                     color = color + (prod(m.kt(i), traceRay(refract, thresh, depth+1)));
                 }
             }
@@ -144,9 +141,8 @@ Vec3d RayTracer::traceRay( const ray& r,
         {
             return color;
         }
-
-
-    } else {
+    }
+    else {
         // No intersection.  This ray travels to infinity, so we color
         // it according to the background color, which in this (simple) case
         // is just black.
