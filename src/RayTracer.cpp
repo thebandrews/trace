@@ -70,15 +70,15 @@ Vec3d RayTracer::traceRay( const ray& r,
 
         const Vec3d P0 = r.getPosition();
         const Vec3d Rd = r.getDirection();
-        Vec3d N = i.N;
+        Vec3d Viewer = -r.getDirection();
+
+        const Vec3d N = i.N;
         double t = i.t;
         Vec3d Q = P0 + t*Rd;
         Vec3d color = Vec3d(0,0,0);
 
         if(N*(-Rd) <= 0)
         {
-            N = -N;
-            i.setN(N);
             color = prod(m.kt(i), scene->ambient());
         }
 
@@ -91,22 +91,28 @@ Vec3d RayTracer::traceRay( const ray& r,
             //
             if(m.kr(i) != Vec3d(0,0,0))
             {
-
+                Vec3d Rn = N;
+                if(N*(-Rd) <= 0)
+                {
+                    Rn = -N;
+                }
                 //
                 // Reflection direction according to Shirley:
-                // r = d-2(d · n)n
+                // r = d-2(d*n)n
                 //
-                Vec3d R = Rd - (2*(Rd*N)*N);
+                Vec3d R = Rd - (2*(Rd*Rn)*Rn);
                 ray reflect( Q, R, ray::REFLECTION );
 
                 color += (prod(m.kr(i),traceRay(reflect, thresh, depth+1)));
             }
 
-            if(m.kt(i) != Vec3d(0,0,0))
+            Vec3d k_t = Vec3d(1,1,1) - m.ks(i);
+
+            if(k_t != Vec3d(0,0,0))
             {
                 double n_i;
                 double n_t;
-
+                Vec3d Rfn = N;
                 //
                 // Check to see if ray is entering object
                 //
@@ -119,50 +125,17 @@ Vec3d RayTracer::traceRay( const ray& r,
                 {
                     n_i = m.index(i);
                     n_t = 1.0003; ///index_of_air;
+                    Rfn = -N;
                 }
 
-                double tir_term = 1 - (((n_i*n_i)*(1 - ((Rd*N)*(Rd*N))))/(n_t*n_t));
-
+                double tir_term = 1 - ((n_i/n_t)*(n_i/n_t)*(1-((Rfn*Viewer)*(Rfn*Viewer))));
                 if(tir_term >= 0)
                 {
-
-                    Vec3d T = ((n_i*(Rd-(N*(Rd*N))))/(n_t)) - (N*(sqrt(tir_term)));
+                    Vec3d T = ((n_i/n_t)*(Rfn*Viewer) - sqrt(tir_term))*Rfn-((n_i/n_t)*Viewer);
                     ray refract (Q, T, ray::REFRACTION );
+                    
                     color = color + (prod(m.kt(i), traceRay(refract, thresh, depth+1)));
                 }
-
-                /*double n = n_i / n_t;
-                double n_squared = n * n;
-
-                double cos_i = N*Rd;
-                double tir_term = 1 - (n_squared*(1-(cos_i*cos_i)));
-                double cos_t = sqrt(tir_term);
-
-                if(tir_term >= 0)
-                {
-                    Vec3d T = (n*cos_i - cos_t)*N - n*N;
-                    ray refract (Q, T, ray::REFRACTION );
-                    color += (prod(m.kt(i), traceRay(refract, thresh, depth+1)));
-                }*/
-
-                ////
-                //// Compute total internal reflection
-                ////
-                //double tir = 1-(((n_i*n_i)*(1-((Rd*N)*(Rd*N))))/(n_t*n_t));
-
-                //if (tir >= 0)
-                //{
-                //    //
-                //    // Compute T - Taken from Shirley
-                //    //
-                //    Vec3d T = ((n_i*(Rd - N*(Rd*N))) / (n_t)) - N*sqrt(tir);
-                //    ray refract (Q, T, ray::REFRACTION );
-                //
-                //    color += (prod(m.kt(i), traceRay(refract, thresh, depth+1))); 
-                //}
-
-
-
             }
 
             return color;
